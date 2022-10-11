@@ -1,0 +1,10 @@
+            limit:
+threads :  100000000 / 1000000000
+      1 :   99021291 /  954899291
+      3 :  418248208 / 4176760958
+     10 :  220747792 / 2284655333
+
+
+Looks like when only one thread - no mutexes waiting - everything quicker than light
+
+With threads - there is waitings on mutexes. And 10 threads wins 3 threads (utilizes more efficiently).

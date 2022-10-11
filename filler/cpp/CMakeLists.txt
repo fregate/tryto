@@ -1,3 +1,9 @@
+include(conan.cmake)
+
+conan_cmake_run(REQUIRES lyra/1.6.0
+                BASIC_SETUP CMAKE_TARGETS
+                BUILD missing)
+
 # ---- Declare executable ----
 
 add_executable(mtfiller src/main.cpp)
@@ -10,3 +16,4 @@ set_target_properties(
 )
 
 target_compile_features(mtfiller PRIVATE cxx_std_17)
+target_link_libraries(mtfiller CONAN_PKG::lyra)
