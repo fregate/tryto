@@ -17,26 +17,24 @@ stop(_State) ->
 
 fill(Threads, Limit) ->
     register(main_thread, spawn(?MODULE, assembly_thread, [[], Threads, erlang:monotonic_time()])),
-    Chunk = (Limit - Threads) div Threads,
-    run_fillers(Threads, 1, Chunk + 1),
+    run_fillers(Threads, 1, Limit + 1),
     ok.
 
 assembly_thread(Items, 0, TimePoint) ->
-    io:format("duration: ~p, size: ~p, items: ~p~n", [erlang:monotonic_time() - TimePoint, length(Items), Items]),
+    io:format("duration: ~p, size: ~p~n", [erlang:monotonic_time() - TimePoint, length(Items)]),
     ok;
 assembly_thread(Items, Threads, TimePoint) ->
     receive
         {entry, Num} ->
             assembly_thread(lists:append(Items, [Num]), Threads, TimePoint);
         {finished, _} ->
-            io:format("threads left: ~p~n", [Threads - 1]),
             assembly_thread(Items, Threads - 1, TimePoint);
-        _ -> io:format("unknown~n")
+        _ ->
+            io:format("unknown~n")
     end.
 
 filler_thread(Finish, Finish) ->
     main_thread ! {finished, Finish},
-    io:format("filler thread finished~n"),
     ok;
 filler_thread(Num, Finish) ->
     case (Num rem 11) of
@@ -49,10 +47,17 @@ filler_thread(Num, Finish) ->
 
 %% internal functions
 
-run_fillers(0, _, _) ->
-    io:format("fillers are running~n"),
+run_fillers(1, Start, Limit) ->
+    run_fillers(1, Start, 0, Limit),
     ok;
-run_fillers(Threads, Start, Chunk) ->
-    spawn(?MODULE, filler_thread, [Start, Chunk]),
-    io:format("run thread for [~p, ~p)~n", [Start, Start + Chunk]),
-    run_fillers(Threads - 1, Start + Chunk, Chunk).
+run_fillers(Threads, Start, Limit) ->
+    Chunk = Limit div Threads,
+    run_fillers(Threads, Start, Chunk, Limit),
+    ok.
+
+run_fillers(1, Start, _, Limit) ->
+    spawn(?MODULE, filler_thread, [Start, Limit]),
+    ok;
+run_fillers(Threads, Start, Chunk, Limit) ->
+    spawn(?MODULE, filler_thread, [Start, Start + Chunk]),
+    run_fillers(Threads - 1, Start + Chunk, Chunk, Limit).
